@@ -10,9 +10,12 @@ import 'screens/auth/register_screen.dart';
 import 'screens/home/main_shell.dart';
 import 'screens/profile/change_password_screen.dart';
 import 'screens/splash_screen.dart';
+import 'services/notification_service.dart';
 
-void main() {
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  // Nhắc nhở (task 04): nạp múi giờ Asia/Ho_Chi_Minh và khởi tạo plugin thông báo
+  await NotificationService.init();
 
   final authProvider = AuthProvider();
   // Khi API trả 401 (token hết hạn / bị khóa), ApiClient đã xóa phiên trong SQLite,

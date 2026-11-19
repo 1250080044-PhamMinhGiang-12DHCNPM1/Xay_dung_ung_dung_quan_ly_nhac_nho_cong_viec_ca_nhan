@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../providers/auth_provider.dart';
+import '../../services/notification_service.dart';
 
 /// Tài khoản: thông tin người dùng, đổi mật khẩu, đăng xuất.
 class ProfileScreen extends StatelessWidget {
@@ -60,6 +61,29 @@ class ProfileScreen extends StatelessWidget {
             trailing: const Icon(Icons.chevron_right),
             onTap: () => Navigator.of(context).pushNamed('/change-password'),
           ),
+          // ----- Nhắc nhở (task 04): demo thông báo cục bộ -----
+          ListTile(
+            leading: const Icon(Icons.notifications_active_outlined),
+            title: const Text('Thử thông báo ngay'),
+            onTap: () async {
+              await NotificationService.requestPermissions();
+              await NotificationService.showTest();
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.alarm_add_outlined),
+            title: const Text('Thử nhắc sau 1 phút'),
+            subtitle: const Text('Đặt lịch rồi tắt hẳn app để kiểm tra'),
+            onTap: () async {
+              await NotificationService.requestPermissions();
+              final at = await NotificationService.scheduleTest();
+              if (!context.mounted) return;
+              ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                content: Text('Đã đặt nhắc lúc ${TimeOfDay.fromDateTime(at).format(context)}'),
+              ));
+            },
+          ),
+          const Divider(),
           ListTile(
             leading: const Icon(Icons.logout, color: Colors.red),
             title: const Text('Đăng xuất', style: TextStyle(color: Colors.red)),

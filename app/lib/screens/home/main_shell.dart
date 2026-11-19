@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../../providers/auth_provider.dart';
 import '../../providers/plan_draft_provider.dart';
+import '../../services/notification_service.dart';
 import '../admin/admin_screen.dart';
 import '../plan/plan_draft_screen.dart';
 import '../profile/profile_screen.dart';
@@ -21,6 +22,13 @@ class MainShell extends StatefulWidget {
 
 class _MainShellState extends State<MainShell> {
   int _index = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    // Vào màn chính sau đăng nhập thì xin quyền thông báo + báo thức chính xác (task 04)
+    NotificationService.requestPermissions();
+  }
 
   @override
   Widget build(BuildContext context) {

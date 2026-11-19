@@ -20,6 +20,7 @@ builder.Services.AddScoped<AuthService>();
 builder.Services.AddScoped<UserService>();
 builder.Services.AddSingleton<FileService>();
 // Bảo / Hiếu / An đăng ký thêm CategoryService, TaskService, PlanService, EmailService ở đây.
+builder.Services.AddScoped<PlanService>();
 
 // ---------- Controllers + validate ----------
 builder.Services.AddControllers()

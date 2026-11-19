@@ -124,3 +124,58 @@ Content-Type: application/json
 {
   "isLocked": true
 }
+
+############################################################
+### PLANS - kế hoạch của tôi (task 04 - An)
+############################################################
+
+### Chốt kế hoạch (transaction: tạo Plan + PlanItems, TotalMinutes = 30 + 45 = 75)
+# @name createPlan
+POST {{host}}/plans
+Authorization: Bearer {{memberToken}}
+Content-Type: application/json
+
+{
+  "planDate": "2026-11-22",
+  "note": "Kế hoạch học tập",
+  "items": [
+    { "taskId": 10, "minutes": 30 },
+    { "taskId": 11, "minutes": 45 }
+  ]
+}
+
+@planId = {{createPlan.response.body.data.id}}
+
+### Chốt kế hoạch có taskId của người khác / không tồn tại → 400, KHÔNG tạo Plan nào (rollback)
+POST {{host}}/plans
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "planDate": "2026-11-22",
+  "note": "Admin lấy công việc của member",
+  "items": [ { "taskId": 10, "minutes": 30 } ]
+}
+
+### Không có công việc nào (400)
+POST {{host}}/plans
+Authorization: Bearer {{memberToken}}
+Content-Type: application/json
+
+{ "planDate": "2026-11-22", "items": [] }
+
+### Lịch sử kế hoạch của tôi (phân trang)
+GET {{host}}/plans?page=1&pageSize=10
+Authorization: Bearer {{memberToken}}
+
+### Tìm theo ghi chú hoặc tiêu đề công việc
+GET {{host}}/plans?keyword=mẫu 10
+Authorization: Bearer {{memberToken}}
+
+### Chi tiết kế hoạch
+GET {{host}}/plans/{{planId}}
+Authorization: Bearer {{memberToken}}
+
+### Xem kế hoạch của người khác → 404
+GET {{host}}/plans/{{planId}}
+Authorization: Bearer {{adminToken}}

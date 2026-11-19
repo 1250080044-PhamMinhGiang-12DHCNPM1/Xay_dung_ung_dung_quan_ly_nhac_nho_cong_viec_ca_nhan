@@ -14,6 +14,7 @@ import '../models/task_item.dart';
 class NotificationService {
   static final FlutterLocalNotificationsPlugin _plugin = FlutterLocalNotificationsPlugin();
   static bool _initialized = false;
+  static bool _askedExactAlarm = false; // chỉ mở trang cấp quyền báo thức chính xác 1 lần mỗi lần mở app
 
   /// ID dành cho thông báo thử (TaskId luôn >= 1 nên không trùng).
   static const int _testNotificationId = 0;
@@ -53,7 +54,10 @@ class NotificationService {
     if (android == null) return true;
     final granted = await android.requestNotificationsPermission() ?? false;
     final canExact = await android.canScheduleExactNotifications() ?? false;
-    if (!canExact) await android.requestExactAlarmsPermission();
+    if (!canExact && !_askedExactAlarm) {
+      _askedExactAlarm = true; // không hỏi lại liên tục; không cấp thì vẫn nhắc được (chế độ inexact)
+      await android.requestExactAlarmsPermission();
+    }
     return granted;
   }
 

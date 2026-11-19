@@ -17,6 +17,8 @@ obj/
 .vs/
 # Bí mật và dữ liệu tải lên
 appsettings.Development.json
-api/wwwroot/uploads/*
-!api/wwwroot/uploads/.gitkeep
+# Ảnh tải lên: bỏ qua mọi file, chỉ giữ .gitkeep để còn thư mục
+api/TaskReminder.Api/wwwroot/uploads/**
+!api/TaskReminder.Api/wwwroot/uploads/**/
+!api/TaskReminder.Api/wwwroot/uploads/**/.gitkeep
 .env

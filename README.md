@@ -26,11 +26,11 @@ Giảng viên: ThS. Nguyễn Thanh Truyền, CN. Nguyễn Phan Chí Thành.
 
 ## Chạy dự án
 1. Cài Flutter SDK, .NET 10 SDK, SQL Server. Ghi phiên bản đang dùng vào mục dưới.
-2. Chạy script trong `db/` để tạo cơ sở dữ liệu.
-3. API: `cd api && dotnet run` (sửa chuỗi kết nối trong `appsettings.Development.json`).
+2. Chạy script trong `db/` để tạo cơ sở dữ liệu: `sqlcmd -S localhost -E -C -f 65001 -i db/01_schema.sql` rồi `db/02_seed.sql` (cần `-f 65001` để tiếng Việt không lỗi font).
+3. API: copy `api/TaskReminder.Api/appsettings.Development.example.json` thành `appsettings.Development.json`, sửa chuỗi kết nối và `Jwt:Key`, rồi `cd api/TaskReminder.Api && dotnet run --launch-profile http` (http://localhost:5080, Swagger UI tại `/swagger`).
 4. App: `cd app && flutter pub get && flutter run` (đặt địa chỉ API trong `lib/core/config.dart`; emulator Android dùng `10.0.2.2`).
 
-Phiên bản: Flutter ___ | Dart ___ | .NET 10 SDK ___ | SQL Server ___
+Phiên bản: Flutter 3.47.1 | Dart 3.13.1 | .NET 10 SDK 10.0.401 | SQL Server 2022 Developer
 
 ## Quy tắc làm việc nhóm
 Repo: https://github.com/1250080044-PhamMinhGiang-12DHCNPM1/Xay_dung_ung_dung_quan_ly_nhac_nho_cong_viec_ca_nhan

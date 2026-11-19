@@ -1,0 +1,80 @@
+-- Ứng dụng quản lý, nhắc nhở công việc cá nhân - SQL Server
+IF DB_ID('TaskReminderDb') IS NULL CREATE DATABASE TaskReminderDb;
+GO
+USE TaskReminderDb;
+GO
+
+CREATE TABLE Roles (
+  Id INT IDENTITY PRIMARY KEY,
+  Name NVARCHAR(20) NOT NULL UNIQUE
+);
+
+CREATE TABLE Users (
+  Id INT IDENTITY PRIMARY KEY,
+  Email NVARCHAR(150) NOT NULL UNIQUE,
+  PasswordHash NVARCHAR(200) NULL,          -- NULL nếu tài khoản chỉ đăng nhập Google
+  FullName NVARCHAR(100) NOT NULL,
+  AvatarUrl NVARCHAR(300) NULL,
+  RoleId INT NOT NULL REFERENCES Roles(Id),
+  IsLocked BIT NOT NULL DEFAULT 0,
+  EmailConfirmed BIT NOT NULL DEFAULT 0,
+  GoogleId NVARCHAR(100) NULL,
+  CreatedAt DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME()
+);
+
+CREATE TABLE EmailOtps (
+  Id INT IDENTITY PRIMARY KEY,
+  UserId INT NOT NULL REFERENCES Users(Id) ON DELETE CASCADE,
+  CodeHash NVARCHAR(200) NOT NULL,
+  Purpose NVARCHAR(20) NOT NULL CHECK (Purpose IN ('VerifyEmail','ResetPassword')),
+  ExpiresAt DATETIME2 NOT NULL,
+  UsedAt DATETIME2 NULL,
+  Attempts INT NOT NULL DEFAULT 0,
+  CreatedAt DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME()
+);
+
+CREATE TABLE Categories (
+  Id INT IDENTITY PRIMARY KEY,
+  Name NVARCHAR(100) NOT NULL UNIQUE,
+  Description NVARCHAR(500) NULL,
+  ImageUrl NVARCHAR(300) NULL,
+  CreatedAt DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME()
+);
+
+CREATE TABLE Tasks (
+  Id INT IDENTITY PRIMARY KEY,
+  UserId INT NOT NULL REFERENCES Users(Id),
+  CategoryId INT NOT NULL REFERENCES Categories(Id),   -- NO ACTION: phải kiểm tra trước khi xóa nhóm
+  Title NVARCHAR(200) NOT NULL,
+  Description NVARCHAR(2000) NULL,
+  DueDate DATETIME2 NULL,
+  Priority TINYINT NOT NULL DEFAULT 2 CHECK (Priority BETWEEN 1 AND 3),
+  Status NVARCHAR(10) NOT NULL DEFAULT 'Todo' CHECK (Status IN ('Todo','Doing','Done')),
+  ImageUrl NVARCHAR(300) NULL,
+  ReminderAt DATETIME2 NULL,
+  CreatedAt DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME(),
+  UpdatedAt DATETIME2 NULL
+);
+CREATE INDEX IX_Tasks_User_Created ON Tasks(UserId, CreatedAt DESC);
+CREATE INDEX IX_Tasks_Category ON Tasks(CategoryId);
+
+CREATE TABLE Plans (
+  Id INT IDENTITY PRIMARY KEY,
+  UserId INT NOT NULL REFERENCES Users(Id),
+  PlanDate DATE NOT NULL,
+  Status NVARCHAR(15) NOT NULL DEFAULT 'Confirmed'
+    CHECK (Status IN ('Confirmed','InProgress','Completed','Cancelled')),
+  TotalMinutes INT NOT NULL DEFAULT 0,
+  Note NVARCHAR(500) NULL,
+  CreatedAt DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME()
+);
+CREATE INDEX IX_Plans_Date ON Plans(PlanDate);
+
+CREATE TABLE PlanItems (
+  Id INT IDENTITY PRIMARY KEY,
+  PlanId INT NOT NULL REFERENCES Plans(Id) ON DELETE CASCADE,
+  TaskId INT NOT NULL REFERENCES Tasks(Id),             -- NO ACTION: phải kiểm tra trước khi xóa công việc
+  Minutes INT NOT NULL CHECK (Minutes > 0)
+);
+CREATE INDEX IX_PlanItems_Task ON PlanItems(TaskId);
+GO

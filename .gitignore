@@ -1,0 +1,22 @@
+# Flutter / Dart
+.dart_tool/
+.packages
+build/
+.flutter-plugins
+.flutter-plugins-dependencies
+*.iml
+.idea/
+.vscode/
+app/android/key.properties
+app/android/local.properties
+*.jks
+# .NET
+bin/
+obj/
+*.user
+.vs/
+# Bí mật và dữ liệu tải lên
+appsettings.Development.json
+api/wwwroot/uploads/*
+!api/wwwroot/uploads/.gitkeep
+.env

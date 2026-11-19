@@ -1,0 +1,126 @@
+### Thử API bằng VS Code (extension REST Client) hoặc Visual Studio / Rider.
+### Chạy request "login admin" và "login member" trước, token được lưu vào biến @adminToken, @memberToken.
+@host = http://localhost:5080/api
+
+### Đăng ký Member mới
+POST {{host}}/auth/register
+Content-Type: application/json
+
+{
+  "email": "sinhvien1@nhacviec.local",
+  "password": "Sv@12345",
+  "fullName": "Sinh viên 1"
+}
+
+### Đăng ký - dữ liệu sai (400)
+POST {{host}}/auth/register
+Content-Type: application/json
+
+{
+  "email": "khong-phai-email",
+  "password": "123",
+  "fullName": ""
+}
+
+### Đăng nhập admin
+# @name loginAdmin
+POST {{host}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "admin@nhacviec.local",
+  "password": "Admin@123"
+}
+
+@adminToken = {{loginAdmin.response.body.data.token}}
+
+### Đăng nhập member
+# @name loginMember
+POST {{host}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "member@nhacviec.local",
+  "password": "Member@123"
+}
+
+@memberToken = {{loginMember.response.body.data.token}}
+
+### Đăng nhập sai mật khẩu (401)
+POST {{host}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "member@nhacviec.local",
+  "password": "sai-mat-khau"
+}
+
+### Thông tin người dùng hiện tại
+GET {{host}}/auth/me
+Authorization: Bearer {{memberToken}}
+
+### Không gửi token (401)
+GET {{host}}/auth/me
+
+### Đổi mật khẩu (đổi xong nhớ đổi lại để các request khác còn chạy)
+POST {{host}}/auth/change-password
+Authorization: Bearer {{memberToken}}
+Content-Type: application/json
+
+{
+  "oldPassword": "Member@123",
+  "newPassword": "Member@456"
+}
+
+### Admin: danh sách member, tìm kiếm, phân trang
+GET {{host}}/users?keyword=nhacviec&page=1&pageSize=10
+Authorization: Bearer {{adminToken}}
+
+### Member gọi API Admin (403)
+GET {{host}}/users
+Authorization: Bearer {{memberToken}}
+
+### Admin: đổi role user id=2 thành Admin
+PUT {{host}}/users/2/role
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "role": "Member"
+}
+
+### Admin: tự hạ quyền chính mình (400)
+PUT {{host}}/users/1/role
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "role": "Member"
+}
+
+### Admin: khóa user id=2
+PUT {{host}}/users/2/lock
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "isLocked": true
+}
+
+### Admin: mở khóa user id=2
+PUT {{host}}/users/2/lock
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "isLocked": false
+}
+
+### Admin: tự khóa chính mình (400)
+PUT {{host}}/users/1/lock
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "isLocked": true
+}

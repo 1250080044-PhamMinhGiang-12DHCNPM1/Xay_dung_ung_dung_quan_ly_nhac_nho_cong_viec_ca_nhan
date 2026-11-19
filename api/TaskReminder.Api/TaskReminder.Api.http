@@ -179,3 +179,43 @@ Authorization: Bearer {{memberToken}}
 ### Xem kế hoạch của người khác → 404
 GET {{host}}/plans/{{planId}}
 Authorization: Bearer {{adminToken}}
+
+############################################################
+### OTP EMAIL (task 04 - An)
+### Chưa điền Smtp:AppPassword trong appsettings.Development.json thì API KHÔNG gửi mail,
+### mà ghi nội dung email (có mã OTP) ra cửa sổ chạy API (log cảnh báo "[EMAIL - chưa cấu hình SMTP...]").
+############################################################
+
+### Đăng ký → gửi OTP xác thực email
+POST {{host}}/auth/register
+Content-Type: application/json
+
+{
+  "email": "otp.demo@nhacviec.local",
+  "password": "Demo@123",
+  "fullName": "Demo OTP"
+}
+
+### Xác thực email (thay code bằng mã trong email / log). Sai 5 lần thì mã bị hủy.
+POST {{host}}/auth/verify-email
+Content-Type: application/json
+
+{ "email": "otp.demo@nhacviec.local", "code": "123456" }
+
+### Gửi lại mã (phải cách lần trước 60 giây)
+POST {{host}}/auth/resend-otp
+Content-Type: application/json
+
+{ "email": "otp.demo@nhacviec.local", "purpose": "VerifyEmail" }
+
+### Quên mật khẩu - luôn trả success (kể cả email không tồn tại)
+POST {{host}}/auth/forgot-password
+Content-Type: application/json
+
+{ "email": "otp.demo@nhacviec.local" }
+
+### Đặt lại mật khẩu bằng mã OTP
+POST {{host}}/auth/reset-password
+Content-Type: application/json
+
+{ "email": "otp.demo@nhacviec.local", "code": "123456", "newPassword": "Moi@1234" }

@@ -18,11 +18,15 @@ public class AuthService
 {
     private readonly AppDbContext _db;
     private readonly IConfiguration _config;
+    private readonly OtpService _otp;
+    private readonly ILogger<AuthService> _logger;
 
-    public AuthService(AppDbContext db, IConfiguration config)
+    public AuthService(AppDbContext db, IConfiguration config, OtpService otp, ILogger<AuthService> logger)
     {
         _db = db;
         _config = config;
+        _otp = otp;
+        _logger = logger;
     }
 
     /// <summary>Cờ tạm: false thì cho đăng nhập dù chưa xác thực email (khi OTP chưa làm xong).</summary>
@@ -30,7 +34,8 @@ public class AuthService
 
     public static string NormalizeEmail(string email) => email.Trim().ToLowerInvariant();
 
-    public async Task<UserDto> RegisterAsync(RegisterRequest req)
+    /// <summary>Đăng ký Member; trả về user và cờ đã gửi được email OTP xác thực hay chưa.</summary>
+    public async Task<(UserDto User, bool OtpSent)> RegisterAsync(RegisterRequest req)
     {
         var email = NormalizeEmail(req.Email);
         if (await _db.Users.AnyAsync(u => u.Email == email))
@@ -51,9 +56,71 @@ public class AuthService
         _db.Users.Add(user);
         await _db.SaveChangesAsync();
 
-        // TODO(An - task 04): sinh OTP mục đích VerifyEmail và gửi email xác thực tại đây.
+        // Gửi OTP xác thực email (task 04). Gửi mail lỗi thì vẫn giữ tài khoản đã tạo,
+        // người dùng bấm "Gửi lại mã" (resend-otp) sau.
+        var otpSent = true;
+        try
+        {
+            await _otp.CreateAndSendAsync(user, EmailOtp.PurposeVerifyEmail);
+        }
+        catch (Exception ex)
+        {
+            otpSent = false;
+            _logger.LogError(ex, "Không gửi được OTP xác thực cho {Email}", user.Email);
+        }
 
-        return ToDto(user);
+        return (ToDto(user), otpSent);
+    }
+
+    // ---------------- OTP email (task 04 - An) ----------------
+
+    /// <summary>POST /api/auth/verify-email: mã đúng → EmailConfirmed = true.</summary>
+    public async Task VerifyEmailAsync(VerifyEmailRequest req)
+    {
+        var user = await _otp.VerifyAsync(NormalizeEmail(req.Email), EmailOtp.PurposeVerifyEmail, req.Code);
+        user.EmailConfirmed = true;
+        await _db.SaveChangesAsync();
+    }
+
+    /// <summary>
+    /// POST /api/auth/resend-otp: gửi lại mã (cách mã trước tối thiểu 60 giây).
+    /// Email không tồn tại thì không gửi nhưng vẫn trả thành công (không lộ email nào đã đăng ký).
+    /// </summary>
+    public async Task ResendOtpAsync(ResendOtpRequest req)
+    {
+        var user = await _db.Users.FirstOrDefaultAsync(u => u.Email == NormalizeEmail(req.Email));
+        if (user == null) return;
+        if (req.Purpose == EmailOtp.PurposeVerifyEmail && user.EmailConfirmed)
+            throw new AppException(StatusCodes.Status400BadRequest, "Email đã được xác thực, bạn có thể đăng nhập");
+
+        await _otp.CreateAndSendAsync(user, req.Purpose);
+    }
+
+    /// <summary>
+    /// POST /api/auth/forgot-password: LUÔN trả thành công, kể cả email không tồn tại hoặc đang chờ 60 giây,
+    /// để kẻ xấu không dò được email nào đã đăng ký.
+    /// </summary>
+    public async Task ForgotPasswordAsync(ForgotPasswordRequest req)
+    {
+        var user = await _db.Users.FirstOrDefaultAsync(u => u.Email == NormalizeEmail(req.Email));
+        if (user == null) return;
+        try
+        {
+            await _otp.CreateAndSendAsync(user, EmailOtp.PurposeResetPassword);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Không gửi được OTP đặt lại mật khẩu cho {Email}", user.Email);
+        }
+    }
+
+    /// <summary>POST /api/auth/reset-password: mã đúng → băm và lưu mật khẩu mới.</summary>
+    public async Task ResetPasswordAsync(ResetPasswordRequest req)
+    {
+        var user = await _otp.VerifyAsync(NormalizeEmail(req.Email), EmailOtp.PurposeResetPassword, req.Code);
+        user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(req.NewPassword);
+        user.EmailConfirmed = true; // nhận được mã qua email nghĩa là đã chứng minh sở hữu email
+        await _db.SaveChangesAsync();
     }
 
     public async Task<LoginResponse> LoginAsync(LoginRequest req)

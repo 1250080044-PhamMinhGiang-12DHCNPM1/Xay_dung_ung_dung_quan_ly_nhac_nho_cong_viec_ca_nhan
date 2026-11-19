@@ -60,3 +60,50 @@ public class LoginResponse
     public DateTime ExpiresAt { get; set; }
     public UserDto User { get; set; } = new();
 }
+
+// ---------------- OTP email (task 04 - An) ----------------
+
+public class VerifyEmailRequest
+{
+    [Required(ErrorMessage = "Vui lòng nhập email")]
+    [EmailAddress(ErrorMessage = "Email không hợp lệ")]
+    public string Email { get; set; } = "";
+
+    [Required(ErrorMessage = "Vui lòng nhập mã OTP")]
+    [RegularExpression(@"^\d{6}$", ErrorMessage = "Mã OTP gồm 6 chữ số")]
+    public string Code { get; set; } = "";
+}
+
+public class ResendOtpRequest
+{
+    [Required(ErrorMessage = "Vui lòng nhập email")]
+    [EmailAddress(ErrorMessage = "Email không hợp lệ")]
+    public string Email { get; set; } = "";
+
+    [Required(ErrorMessage = "Thiếu mục đích gửi mã")]
+    [RegularExpression("^(VerifyEmail|ResetPassword)$", ErrorMessage = "Mục đích chỉ được là VerifyEmail hoặc ResetPassword")]
+    public string Purpose { get; set; } = "";
+}
+
+public class ForgotPasswordRequest
+{
+    [Required(ErrorMessage = "Vui lòng nhập email")]
+    [EmailAddress(ErrorMessage = "Email không hợp lệ")]
+    public string Email { get; set; } = "";
+}
+
+public class ResetPasswordRequest
+{
+    [Required(ErrorMessage = "Vui lòng nhập email")]
+    [EmailAddress(ErrorMessage = "Email không hợp lệ")]
+    public string Email { get; set; } = "";
+
+    [Required(ErrorMessage = "Vui lòng nhập mã OTP")]
+    [RegularExpression(@"^\d{6}$", ErrorMessage = "Mã OTP gồm 6 chữ số")]
+    public string Code { get; set; } = "";
+
+    [Required(ErrorMessage = "Vui lòng nhập mật khẩu mới")]
+    [MinLength(6, ErrorMessage = "Mật khẩu mới tối thiểu 6 ký tự")]
+    [MaxLength(100, ErrorMessage = "Mật khẩu mới tối đa 100 ký tự")]
+    public string NewPassword { get; set; } = "";
+}

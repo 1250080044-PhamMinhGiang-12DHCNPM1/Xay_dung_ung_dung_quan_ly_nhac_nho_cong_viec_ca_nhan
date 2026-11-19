@@ -30,4 +30,12 @@ class Validators {
     if (v.length > 100) return 'Họ tên tối đa 100 ký tự';
     return null;
   }
+
+  /// Mã OTP: đúng 6 chữ số.
+  static String? otp(String? value) {
+    final v = value?.trim() ?? '';
+    if (v.isEmpty) return 'Vui lòng nhập mã OTP';
+    if (!RegExp(r'^\d{6}$').hasMatch(v)) return 'Mã OTP gồm 6 chữ số';
+    return null;
+  }
 }

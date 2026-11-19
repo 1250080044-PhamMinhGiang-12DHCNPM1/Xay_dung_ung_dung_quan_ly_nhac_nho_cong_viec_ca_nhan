@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../core/api_client.dart';
 import '../../core/validators.dart';
 import '../../providers/auth_provider.dart';
+import 'forgot_password_screen.dart';
+import 'verify_email_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -32,11 +35,48 @@ class _LoginScreenState extends State<LoginScreen> {
       await context.read<AuthProvider>().login(_emailController.text, _passwordController.text);
       if (!mounted) return;
       Navigator.of(context).pushReplacementNamed('/home');
+    } on ApiException catch (e) {
+      if (!mounted) return;
+      // 403 "chưa xác thực email" (khi bật RequireEmailConfirmation) → mời nhập mã OTP
+      if (e.statusCode == 403 && e.message.contains('xác thực email')) {
+        await _askVerifyEmail();
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.message)));
+      }
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
     } finally {
       if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  Future<void> _askVerifyEmail() async {
+    final go = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Chưa xác thực email'),
+        content: const Text('Bạn cần nhập mã OTP đã gửi qua email trước khi đăng nhập.'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Để sau')),
+          FilledButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Nhập mã')),
+        ],
+      ),
+    );
+    if (go != true || !mounted) return;
+    await Navigator.of(context).push(MaterialPageRoute(
+      // Có thể mã cũ đã hết hạn → cho bấm "Gửi lại mã" ngay
+      builder: (_) => VerifyEmailScreen(email: _emailController.text.trim(), codeJustSent: false),
+    ));
+  }
+
+  Future<void> _openForgotPassword() async {
+    final email = await Navigator.of(context).push<String>(MaterialPageRoute(
+      builder: (_) => ForgotPasswordScreen(initialEmail: _emailController.text.trim()),
+    ));
+    if (email != null) {
+      _emailController.text = email;
+      _passwordController.clear();
     }
   }
 
@@ -101,7 +141,11 @@ class _LoginScreenState extends State<LoginScreen> {
                     onPressed: _loading ? null : _openRegister,
                     child: const Text('Chưa có tài khoản? Đăng ký'),
                   ),
-                  // Task 04 (An): nút "Quên mật khẩu"; Task 05 (Giang): nút "Đăng nhập bằng Google".
+                  TextButton(
+                    onPressed: _loading ? null : _openForgotPassword,
+                    child: const Text('Quên mật khẩu?'),
+                  ),
+                  // Task 05 (Giang): nút "Đăng nhập bằng Google".
                 ],
               ),
             ),

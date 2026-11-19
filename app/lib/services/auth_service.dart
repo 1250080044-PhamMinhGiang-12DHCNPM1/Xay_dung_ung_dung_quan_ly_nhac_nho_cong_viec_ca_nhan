@@ -41,6 +41,32 @@ class AuthService {
     return body['message'] as String? ?? 'Đổi mật khẩu thành công';
   }
 
+  // ---------------- OTP email (task 04 - An) ----------------
+
+  /// POST /auth/verify-email {email, code}
+  Future<String> verifyEmail(String email, String code) => _postMessage(
+      '/auth/verify-email', {'email': email.trim(), 'code': code.trim()}, 'Xác thực email thành công');
+
+  /// POST /auth/resend-otp {email, purpose: VerifyEmail | ResetPassword}
+  Future<String> resendOtp(String email, String purpose) => _postMessage(
+      '/auth/resend-otp', {'email': email.trim(), 'purpose': purpose}, 'Đã gửi lại mã OTP');
+
+  /// POST /auth/forgot-password {email} - API luôn trả thành công
+  Future<String> forgotPassword(String email) =>
+      _postMessage('/auth/forgot-password', {'email': email.trim()}, 'Đã gửi mã OTP');
+
+  /// POST /auth/reset-password {email, code, newPassword}
+  Future<String> resetPassword(String email, String code, String newPassword) => _postMessage(
+      '/auth/reset-password',
+      {'email': email.trim(), 'code': code.trim(), 'newPassword': newPassword},
+      'Đặt lại mật khẩu thành công');
+
+  Future<String> _postMessage(String path, Map<String, dynamic> body, String fallback) async {
+    final res = await ApiClient.sendRaw(() => ApiClient.dio.post(path, data: body));
+    final message = res['message'] as String?;
+    return (message == null || message.isEmpty) ? fallback : message;
+  }
+
   /// Đăng xuất: chỉ xóa phiên trong SQLite, không cần gọi server
   /// (JWT không lưu ở server; app không còn token thì không gọi được API cần đăng nhập).
   Future<void> logout() => LocalDb.clearSession();

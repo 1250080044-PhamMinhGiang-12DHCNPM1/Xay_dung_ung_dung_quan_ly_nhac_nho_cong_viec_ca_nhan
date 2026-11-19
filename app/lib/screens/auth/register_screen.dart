@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../core/validators.dart';
 import '../../services/auth_service.dart';
+import 'verify_email_screen.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -39,9 +40,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
       );
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
-      // Quay lại màn đăng nhập, điền sẵn email
-      Navigator.of(context).pop(_emailController.text.trim());
-      // Task 04 (An): chuyển sang màn nhập OTP xác thực email thay vì về đăng nhập.
+      // Task 04: API đã gửi OTP → mở màn nhập mã xác thực email
+      final email = _emailController.text.trim();
+      await Navigator.of(context).push<bool>(
+        MaterialPageRoute(builder: (_) => VerifyEmailScreen(email: email)),
+      );
+      // Xác thực xong (hoặc bấm quay lại) → về màn đăng nhập, điền sẵn email
+      if (mounted) Navigator.of(context).pop(email);
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
